@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Lista com Produtos</title>
+</head>
+<body>
+
+        <form onsubmit="cad(event)">
+            <label>Titulo:</label>
+            <input type="text" name="title"><br>
+            <label>Descricao:</label>
+            <input type="text" name="description"><br>
+            <label>Url:</label>
+            <input type="text" name="url"><br>
+            <input type="submit">
+        </form>
+        <button id="update" style="display: none;">Update</button>
+        <button id="create" style="display: none;">Create</button>
+
+    <h1>Produtos</h1>
+    <div class="produtos">
+
+    </div>
+
+    <script type="text/javascript">
+
+        function list(){
+
+        let main = document.querySelector(".produtos");
+        main.innerHTML = "";
+        let titulo = document.querySelector('input[name="title"]').value = "";
+        let descricao = document.querySelector('input[name="description"]').value = "";
+        let url = document.querySelector('input[name="url"]').value = "";
+
+        fetch('http://localhost:3001/api/products').then((res) =>{
+            if(res.status === 200){
+                res.json().then((produtos) =>{
+                    const products = produtos.map((elemento) =>{
+                        
+                        var prods = { 
+                            id: elemento._id,
+                            title : elemento.title,
+                            description: elemento.description,
+                            url: elemento.url,
+                        };
+                        //console.log(prods);
+
+                        return prods;
+                    });
+
+
+
+                    products.map((prod) => {
+                        titulo = document.createElement("h1");
+                        titulo.innerHTML = prod.title;
+                        botao = document.createElement("button");
+                        atualizar = document.createElement("button");
+                        botao.innerHTML = "Excluir";
+                        atualizar.innerHTML = "Editar";
+                        descricao = document.createElement("p");
+                        descricao.innerHTML = prod.description;
+                        url = document.createElement("p");
+                        url.innerHTML = prod.url;
+                        main.append(titulo);
+                        main.append(descricao);
+                        main.append(url);
+                        main.append(botao);
+                        main.append(atualizar);
+
+                        botao.addEventListener("click", () =>{
+                            fetch(`http://localhost:3001/api/products/${prod.id}`, {
+                                method: 'delete',
+                                headers: { 'Content-type': 'aplication/json' }
+                            }).then((res) => {
+                                    if(res.status == 200){
+                                        alert('Excluido com Sucesso');  
+                                    }else{
+                                        alert('Erro ao Excluir');
+                                    }
+                                    list();
+                                })
+                                .catch((erro) =>{
+                                    alert('Erro ao excluir e no servidor '+erro);
+                                });
+                            //alert(prod.id);
+                        });
+                        
+                        atualizar.addEventListener("click", () => {
+                            fetch(`http://localhost:3001/api/products/${prod.id}`).then((res) => {
+                                if(res.status === 200){
+                                    res.json().then((product) => {                 
+                                        
+                                        document.querySelector('input[type="submit"]').style.display = "none";
+
+                                        document.getElementById("create").style.display = "block";
+
+                                        let buttonUpdate = document.getElementById("update");
+                                        
+                                        buttonUpdate.style.display = "block";
+
+                                        let titulo = document.querySelector('input[name="title"]').value = product.title;
+
+                                        let descricao = document.querySelector('input[name="description"]').value = product.description;
+
+                                        let url = document.querySelector('input[name="url"]').value = product.url;
+
+                                        buttonUpdate.addEventListener("click", ()=>{
+                                            fetch(`http://localhost:3001/api/products/${product._id}`, {
+
+                                                method: 'put',
+                                                headers: {'Content-type': 'application/json'},
+                                                body: JSON.stringify({
+                                                    title: document.querySelector('input[name="title"]').value,
+
+                                                    description: document.querySelector('input[name="description"]').value,
+
+                                                    url: document.querySelector('input[name="url"]').value
+                                                })
+                                            }).then((res) => {
+                                                if(res.status === 200){
+                                                    alert("Atualizado com Sucesso");
+                                                    buttonUpdate.style.display = "none";
+                                                }else{
+                                                    alert("Ocorreu um erro ao Atualizar");
+                                                }
+                                                list();
+                                            }).catch((erro) => {
+                                                alert("Erro no servidor "+erro);
+                                            });
+                                        });
+
+                                    }) 
+                                }
+                            })
+                            .catch((erro) =>{
+                                alert('Erro ao Atualizar '+erro);
+                             });
+                            ;
+
+                        });
+
+                    })
+                    
+                })
+            }else{
+                alert("Ocorreu um Erro ao listar");
+            }
+        }).catch((erro) =>{
+            alert("Ocorreu um erro no Servidor: "+erro);
+        });
+
+        }
+
+        list();
+
+        document.getElementById("create").addEventListener("click", () =>{
+
+            document.getElementById("create").style.display = "none";
+            document.querySelector('input[type="submit"]').style.display = "block";
+
+            let titulo = document.querySelector('input[name="title"]').value = "";
+            let buttonUpdate = document.getElementById("update");
+                                        
+            buttonUpdate.style.display = "none";
+
+            let descricao = document.querySelector('input[name="description"]').value = "";
+
+            let url = document.querySelector('input[name="url"]').value = "";
+
+        });
+
+        function cad(e){
+
+            e.preventDefault(); //Para que não haja refresh na pagina
+
+            let titulo = document.querySelector('input[name="title"]').value;
+            let descricao = document.querySelector('input[name="description"]').value;
+            let url = document.querySelector('input[name="url"]').value;
+
+            fetch('http://localhost:3001/api/products' ,{
+                method: 'post',
+                headers: {'Content-type': 'application/json'},
+                body: JSON.stringify({
+                    title: titulo,
+                    description: descricao,
+                    url: url
+                })
+            }).then((res)=>{
+                if(res.status == 200){
+                    alert('Cadastrado com Sucesso');
+                    console.log(res.json());
+                }else{
+                    alert('Ocorreu um erro ao cadastrar');
+                }
+                list();
+            }).catch((erro) =>{
+                alert('Ocorreu um erro no servidor '+erro);
+            });
+
+        }
+
+
+
+        
+        
+
+    </script>
+    
+</body>
+</html>
